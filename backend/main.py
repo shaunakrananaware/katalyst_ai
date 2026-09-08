@@ -1,8 +1,10 @@
 """Local demo API. Sessions and source graph are process-local; run one worker."""
 
 import os
+from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
 from backend.agent import Agent, ConfigurationError, ProviderError
 
@@ -34,6 +36,7 @@ class ChatResponse(BaseModel):
 
 
 @app.get("/health")
+@app.get("/api/health")
 def health():
     return {
         "status": "ok",
@@ -43,6 +46,7 @@ def health():
 
 
 @app.post("/chat", response_model=ChatResponse)
+@app.post("/api/chat", response_model=ChatResponse)
 def chat(request: ChatRequest):
     try:
         return agent.chat(request.session_id, request.message)
@@ -50,3 +54,12 @@ def chat(request: ChatRequest):
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except ProviderError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+# Keep this mount after the API routes so /api/* is handled by FastAPI first.
+frontend_dist = Path(__file__).resolve().parents[1] / "frontend" / "dist"
+app.mount(
+    "/",
+    StaticFiles(directory=frontend_dist, html=True, check_dir=False),
+    name="frontend",
+)
