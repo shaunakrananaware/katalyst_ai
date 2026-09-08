@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.env
+node_modules/
+dist/
+*.pyc
+
+eval-results.json
+browser-live-results.json
+eval-results-single.json
+browser-live-results-single.json
